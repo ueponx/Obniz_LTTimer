@@ -1,0 +1,186 @@
+<html>
+  <head>
+    <title>供養タイマー</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://obniz.io/js/jquery-3.2.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://unpkg.com/obniz@2.4.0/obniz.js" crossorigin="anonymous"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+
+  </head>
+  <body>
+
+    <div id="obniz-debug"></div>
+    <h1>供養タイマー</h1>
+    <button class="btn btn-primary" id="on5min">5分タイマー Start</button>
+    <button class="btn btn-primary" id="off5min">OFF</button>
+    <p></p>
+    <button class="btn btn-primary" id="on30sec">30秒タイマー Start</button>
+    <button class="btn btn-primary" id="off30sec">OFF</button>
+    <p></p>
+    <button class="btn btn-primary" id="mokugyo">連続木魚</button>
+    <button class="btn btn-primary" id="orin">一回お鈴</button>
+    <button class="btn btn-primary" id="buddha_on">ブッダマシン再生</button>
+    <button class="btn btn-primary" id="buddha_off">ブッダマシン停止</button>
+    <p></p>
+    <img src="https://3.bp.blogspot.com/-RVUbW9n7JQ0/Wj4Im66zadI/AAAAAAABJN0/-Qz4VluABdsfNKsu9gh1m0wykVmNWUyLgCLcBGAs/s800/omairi_family.png" alt="アイデア供養" title="アイデア供養">
+    <p></p>
+    <div id="print"></div>
+    
+    <script>
+      const obniz = new Obniz("4601-3710");
+      const PROCESS_TIME = 4;      
+      let PRE_LIMIT = 240;
+      let LIMIT = 300;
+
+      obniz.onconnect = async function () {
+        obniz.display.clear();
+
+        let solenoid0 = obniz.wired('Solenoid', {gnd:0, signal:1});
+        let solenoid1 = obniz.wired('Solenoid', {gnd:2, signal:3});
+        let buddha = obniz.wired("LED", {anode:4, cathode:5});
+        let seconds = 0;
+
+        obniz.switch.onchange = function(state) {
+          $('#print').text(state);
+          obniz.display.clear();
+          obniz.display.print(state);
+        }  
+
+        $('#on5min').click(function () {
+          PRE_LIMIT = 240;
+          LIMIT = 300-PROCESS_TIME;
+          
+          let currentDate=new Date();
+          let h=currentDate.getHours();
+          let m=currentDate.getMinutes();
+          let s=currentDate.getSeconds();
+          let start = s + (m + (h * 60)) * 60;  
+          let strStart=h+"時"+m+"分"+s+"秒";
+          let times = 0;
+
+          seconds = 0;
+          solenoid1.click();
+
+          obniz.repeat(async function(){
+            obniz.display.clear();
+            obniz.display.font("Times",18);
+            seconds++;
+            obniz.display.print("5分LTスタート");
+            obniz.display.print(strStart);
+            obniz.display.print(seconds);
+            if(PRE_LIMIT == seconds){
+              solenoid1.click(); 
+            }
+            if((LIMIT < seconds) && (seconds < LIMIT+10)){
+              if(times < 3){
+                solenoid0.click();
+                times++;
+              }
+              if(times == 3){
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                solenoid1.click();
+                times++;
+
+                buddha.on();
+                await new Promise(resolve => setTimeout(resolve, 15*1000));
+                buddha.off();
+                obniz.display.print("OFF");
+                obniz.repeat();
+                await new Promise(resolve => setTimeout(resolve, 3*1000));
+              }
+            }
+          }, 1000);
+        });
+                
+        $('#off5min').click(function () {
+          obniz.display.clear();
+          obniz.display.print("OFF");
+          obniz.repeat();
+        });
+
+        //-------------------------
+        
+        $('#on30sec').click(function () {
+          PRE_LIMIT = 10;
+          LIMIT = 30-PROCESS_TIME;
+          
+          let currentDate=new Date();
+          let h=currentDate.getHours();
+          let m=currentDate.getMinutes();
+          let s=currentDate.getSeconds();
+          let start = s + (m + (h * 60)) * 60;  
+          let strStart=h+"時"+m+"分"+s+"秒";
+          let times = 0;
+
+          seconds = 0;
+          solenoid1.click();
+
+          obniz.repeat(async function(){
+            obniz.display.clear();
+            obniz.display.font("Times",18);
+            seconds++;
+            obniz.display.print("30秒LT Start");
+            obniz.display.print(strStart);
+            obniz.display.print(seconds);
+            if(PRE_LIMIT == seconds){
+              solenoid1.click(); 
+            }
+            if((LIMIT < seconds) && (seconds < LIMIT+10)){
+              if(times < 3){
+                solenoid0.click();
+                times++;
+              }
+              if(times == 3){
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                solenoid1.click();
+                times++;
+                
+                buddha.on();
+                await new Promise(resolve => setTimeout(resolve, 15*1000));
+                buddha.off();
+                obniz.display.print("OFF");
+                obniz.repeat();
+                await new Promise(resolve => setTimeout(resolve, 3*1000));
+              }
+            }
+          }, 1000);
+        });
+ 
+        $('#off30sec').click(function () {
+          obniz.display.clear();
+          obniz.display.print("OFF");
+          obniz.repeat();
+        });
+
+        //-------------------------
+        
+        $('#mokugyo').click(function () {
+          obniz.repeat(async function(){
+            obniz.display.clear();
+            solenoid0.click();
+          }, 1000);
+        });
+
+        $('#orin').click(function () {
+          obniz.display.clear();
+          solenoid1.click();
+        });
+           
+        $('#buddha_on').click(function () {
+            obniz.display.clear();
+            buddha.on();
+        });
+        
+        $('#buddha_off').click(function () {
+            obniz.display.clear();
+            buddha.off();
+        });
+
+
+      }
+    </script>
+  </body>
+</html>
